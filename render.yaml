@@ -1,0 +1,9 @@
+# Render.com – "New + > Blueprint" a vyber repozitář s tímto projektem
+services:
+  - type: web
+    name: kulecnik-8ball
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health

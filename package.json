@@ -1,0 +1,17 @@
+{
+  "name": "kulecnik-8ball-online",
+  "version": "1.0.0",
+  "description": "2D multiplayer 8-ball billiards (Node.js, Socket.IO, Canvas)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node test/sim.test.js && node test/net.test.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0f12">
+  <title>Kulečník 8-ball online</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="config.js"></script>
+</head>
+<body>
+<main id="app">
+
+  <!-- HLAVNÍ NABÍDKA -->
+  <section id="screen-menu" class="screen active">
+    <div class="menu-box">
+      <h1 class="logo"><span class="ball8">8</span> KULEČNÍK</h1>
+      <p class="sub">2D 8-ball pro dva hráče online</p>
+      <label class="field">
+        <span>Tvoje jméno</span>
+        <input id="name" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="Hráč">
+      </label>
+      <div class="btn-col">
+        <button id="btn-online" class="btn primary">HRÁT ONLINE</button>
+        <button id="btn-create" class="btn">VYTVOŘIT MÍSTNOST</button>
+        <button id="btn-join" class="btn">PŘIPOJIT SE K MÍSTNOSTI</button>
+        <button id="btn-how" class="btn ghost">JAK HRÁT</button>
+        <button id="btn-settings" class="btn ghost">NASTAVENÍ</button>
+      </div>
+      <p id="conn-state" class="hint">Připojování k serveru…</p>
+    </div>
+  </section>
+
+  <!-- HLEDÁNÍ SOUPEŘE -->
+  <section id="screen-queue" class="screen">
+    <div class="menu-box center">
+      <div class="spinner"></div>
+      <h2>Hledám soupeře…</h2>
+      <p class="hint">Jakmile se připojí další hráč, hra se spustí automaticky.</p>
+      <button id="btn-queue-cancel" class="btn">ZRUŠIT</button>
+    </div>
+  </section>
+
+  <!-- ČEKÁNÍ V MÍSTNOSTI -->
+  <section id="screen-wait" class="screen">
+    <div class="menu-box center">
+      <h2>Místnost vytvořena</h2>
+      <p class="hint">Pošli tento kód kamarádovi:</p>
+      <div id="room-code" class="code">------</div>
+      <button id="btn-copy" class="btn">KOPÍROVAT KÓD</button>
+      <div class="waiting"><div class="spinner small"></div> Čekám na druhého hráče…</div>
+      <button id="btn-wait-cancel" class="btn ghost">ZRUŠIT MÍSTNOST</button>
+    </div>
+  </section>
+
+  <!-- PŘIPOJENÍ KÓDEM -->
+  <section id="screen-join" class="screen">
+    <div class="menu-box center">
+      <h2>Připojit se k místnosti</h2>
+      <input id="join-code" class="code-input" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="off">
+      <p id="join-error" class="error" role="alert"></p>
+      <button id="btn-join-go" class="btn primary">PŘIPOJIT SE</button>
+      <button id="btn-join-back" class="btn ghost">ZPĚT</button>
+    </div>
+  </section>
+
+  <!-- HRA -->
+  <section id="screen-game" class="screen">
+    <header id="hud">
+      <div class="pcard" id="pc0"><div class="pname"><span class="n"></span><em></em></div><div class="pgroup"></div><div class="tray"></div></div>
+      <div id="turn-info">…</div>
+      <div class="pcard right" id="pc1"><div class="pname"><span class="n"></span><em></em></div><div class="pgroup"></div><div class="tray"></div></div>
+    </header>
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div id="power" aria-label="Síla úderu"><div id="power-fill"></div><span id="power-txt">0%</span></div>
+      <div id="toasts"></div>
+    </div>
+    <footer id="gamebar">
+      <button id="btn-leave" class="btn small ghost">Opustit hru</button>
+      <span class="hint">Klikni na bílou kouli, táhni myší dozadu a pusť. Čím dál, tím silnější úder.</span>
+    </footer>
+  </section>
+</main>
+
+<!-- PŘEKRYVY -->
+<div id="ov-how" class="overlay hidden"><div class="panel">
+  <h2>Jak hrát</h2>
+  <ul class="how">
+    <li><b>Cíl:</b> potop všechny své koule (plné 1–7 nebo pruhované 9–15) a pak černou osmičku.</li>
+    <li><b>Úder:</b> klikni na bílou kouli (nebo těsně vedle), drž tlačítko a táhni <b>dozadu</b>. Směr úderu je opačný než tah, síla roste se vzdáleností. Pusť tlačítko pro úder. <kbd>Esc</kbd> / pravé tlačítko úder zruší.</li>
+    <li><b>Skupiny:</b> po první legálně potopené kouli (mimo rozehru) se hráčům přidělí plné / pruhované.</li>
+    <li><b>Tah:</b> potopíš-li svou kouli, hraješ dál. Jinak hraje soupeř.</li>
+    <li><b>Faul:</b> potopená bílá, špatná první zasažená koule, žádný kontakt, nebo po kontaktu žádná koule k mantinelu. Soupeř pak položí bílou kouli kamkoliv na stůl.</li>
+    <li><b>Osmička:</b> potopená před vyčištěním vlastních koulí, nebo při faulu = prohra. Při rozehře se vrací na stůl.</li>
+    <li><b>Spojení:</b> při výpadku se hra drží 2 minuty, můžeš se znovu připojit.</li>
+  </ul>
+  <button class="btn primary" data-close>ROZUMÍM</button>
+</div></div>
+
+<div id="ov-settings" class="overlay hidden"><div class="panel">
+  <h2>Nastavení</h2>
+  <label class="row"><span>Zvuky</span><input type="checkbox" id="set-sound"></label>
+  <label class="row"><span>Hudba</span><input type="checkbox" id="set-music"></label>
+  <label class="row"><span>Hlasitost</span><input type="range" id="set-volume" min="0" max="1" step="0.05"></label>
+  <div class="row"><span>Barva stolu</span><div id="set-table" class="swatches"></div></div>
+  <label class="row"><span>Kvalita animací</span>
+    <select id="set-quality"><option value="high">Vysoká</option><option value="medium">Střední</option><option value="low">Nízká (rychlé)</option></select>
+  </label>
+  <button class="btn primary" data-close>HOTOVO</button>
+</div></div>
+
+<div id="ov-over" class="overlay hidden"><div class="panel center">
+  <h2 id="over-title">Konec hry</h2>
+  <p id="over-reason"></p>
+  <button id="btn-rematch" class="btn primary">ODVETA</button>
+  <button id="btn-over-menu" class="btn ghost">ZPĚT DO MENU</button>
+</div></div>
+
+<div id="ov-opp" class="overlay hidden"><div class="panel center">
+  <div class="spinner"></div>
+  <h2>Soupeř se odpojil</h2>
+  <p>Čekám na jeho návrat… zbývá <b id="opp-sec">120</b> s</p>
+  <button id="btn-opp-leave" class="btn ghost">OPUSTIT HRU</button>
+</div></div>
+
+<div id="ov-conn" class="overlay hidden"><div class="panel center">
+  <div class="spinner"></div>
+  <h2>Spojení ztraceno</h2>
+  <p>Připojuji se znovu…</p>
+</div></div>
+
+<div id="ov-msg" class="overlay hidden"><div class="panel center">
+  <h2 id="msg-title">Hra skončila</h2>
+  <p id="msg-text"></p>
+  <button id="btn-msg-ok" class="btn primary">ZPĚT DO MENU</button>
+</div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
